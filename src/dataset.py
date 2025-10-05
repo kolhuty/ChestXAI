@@ -15,7 +15,7 @@ class ChestXRayDataset(Dataset):
     
     def __init__(self, df: pd.DataFrame, image_dir: str, img_size: tuple[int, int],
                  is_test: bool = False, label_cols: list[str] | None = None, 
-                 transform: callable | None = None) -> None:
+                 transform=None) -> None:
         """Initialize the dataset."""
         self.df = df.reset_index(drop=True)
         self.image_dir = image_dir

@@ -17,7 +17,7 @@ class CNNClassifier(nn.Module):
             nn.Linear(512, num_classes)
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x):
         """Forward pass through the model."""
         # Extract features using the pre-trained backbone
         features = self.backbone(x)
