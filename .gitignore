@@ -1,0 +1,7 @@
+.venv/
+.idea/
+__pycache__/
+logs/
+notebooks/.ipynb_checkpoints/
+data/
+notebooks/EDA.ipynb

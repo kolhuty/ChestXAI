@@ -1,0 +1,17 @@
+model_name: efficientnet_v2_m
+img_size: [512, 512]
+batch_size: 8
+num_classes: 14
+num_epochs: 10
+lr: 5e-5
+subset_frac: 0.002
+
+label_columns: [
+    'Atelectasis', 'Cardiomegaly', 'Consolidation', 'Edema', 'Enlarged Cardiomediastinum',
+    'Fracture', 'Lung Lesion', 'Lung Opacity', 'No Finding', 'Pleural Effusion',
+    'Pleural Other', 'Pneumonia', 'Pneumothorax', 'Support Devices'
+]
+
+csv_dir_train: /kaggle/input/grand-xray-slam-division-b/train2.csv
+image_dir_train: /kaggle/input/grand-xray-slam-division-b/train2/
+sample_submission_csv: /kaggle/input/grand-xray-slam-division-b/sample_submission_2.csv
