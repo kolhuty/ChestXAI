@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 
 
 def plot_learning_curves(model_name: str, history: dict, num_epochs: int) -> None:
-    """Plot learning curves for loss, AUC, and F1-score."""
+    """Plot learning curves for loss and AUC."""
     epochs = np.arange(1, num_epochs+1)
 
-    plt.figure(figsize=(15,4))
+    plt.figure(figsize=(10,4))
     
     # Loss subplot
-    plt.subplot(1,3,1)
+    plt.subplot(1,2,1)
     plt.plot(epochs, history['train']['loss'], label='train loss', marker='o')
     plt.plot(epochs, history['val']['loss'], label='val loss', marker='s')
     plt.xlabel('Epoch')
@@ -21,23 +21,13 @@ def plot_learning_curves(model_name: str, history: dict, num_epochs: int) -> Non
     plt.grid(True, alpha=0.3)
     
     # AUC subplot
-    plt.subplot(1,3,2)
+    plt.subplot(1,2,2)
     plt.plot(epochs, history['train']['auc'], label='train AUC', marker='o')
     plt.plot(epochs, history['val']['auc'], label='val AUC', marker='s')
     plt.xlabel('Epoch')
     plt.ylabel('AUC')
     plt.legend()
     plt.title(f'AUC {model_name}')
-    plt.grid(True, alpha=0.3)
-    
-    # F1-score subplot
-    plt.subplot(1,3,3)
-    plt.plot(epochs, history['train']['f1'], label='train F1', marker='o')
-    plt.plot(epochs, history['val']['f1'], label='val F1', marker='s')
-    plt.xlabel('Epoch')
-    plt.ylabel('F1')
-    plt.legend()
-    plt.title(f'F1 {model_name}')
     plt.grid(True, alpha=0.3)
     
     plt.tight_layout()

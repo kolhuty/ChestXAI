@@ -5,13 +5,12 @@ import pandas as pd
 
 
 def save_results_csv(model_name: str, history: dict, num_epochs: int, lr: float, 
-                    filepath: str = "results_without_metadata_efficientnet2.csv") -> None:
+                    filepath: str = "results_efficientnet2.csv") -> None:
     """Save training results to a CSV file for experiment tracking."""
     # Create a row with the experiment results
     row = {
         "Model": model_name,
         "AUC": max(history['val']['auc']),  # Best validation AUC
-        "F1": max(history['val']['f1']),    # Best validation F1-score
         "epoch": num_epochs,
         "learning rate": lr
     }

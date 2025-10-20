@@ -3,7 +3,7 @@
 import numpy as np
 from tqdm import tqdm
 import torch
-from utils.metrics import MetricCalculator
+from utils.metrics import compute_auc
 from utils.plot import plot_learning_curves, bar_aucs
 from utils.save_metrics import save_results_csv
 
@@ -13,8 +13,7 @@ class Trainer:
     
     def __init__(self, model: torch.nn.Module, optimizer: torch.optim.Optimizer, 
                  criterion: torch.nn.Module, train_loader: torch.utils.data.DataLoader, 
-                 val_loader: torch.utils.data.DataLoader, device: torch.device, 
-                 config: dict, metric_calculator: MetricCalculator | None = None) -> None:
+                 val_loader: torch.utils.data.DataLoader, device: torch.device, config: dict) -> None:
         """Initialize the Trainer."""
         # Move model to specified device
         self.model = model.to(device)
@@ -27,17 +26,14 @@ class Trainer:
         # Extract training parameters from config
         self.num_epochs = config.get("num_epochs", 10)
         self.batch_size = config.get("batch_size", 8)
-        self.lr = config.get("lr", 1e-4)
+        self.lr = config.get("lr", 3e-5)
         self.model_name = config.get("model_name")
         self.label_columns = config.get("label_columns")
 
-        # Initialize metric calculator for evaluation
-        self.metric_calculator = metric_calculator or MetricCalculator(self.label_columns)
-
         # Initialize training history tracking
         self.history = {
-            'train': {'loss': [], 'auc': [], 'f1': [], 'precision': [], 'recall': []},
-            'val': {'loss': [], 'auc': [], 'f1': [], 'precision': [], 'recall': []}
+            'train': {'loss': [], 'auc': []},
+            'val': {'loss': [], 'auc': []}
         }
 
     def train_one_batch(self, imgs: torch.Tensor, labels: torch.Tensor) -> tuple[float, np.ndarray, np.ndarray]:
@@ -94,7 +90,7 @@ class Trainer:
         epoch_loss = running_loss / len(self.train_loader.dataset)
         
         # Compute all metrics for the epoch
-        metrics = self.metric_calculator.compute_all_metrics(all_labels, all_preds)
+        metrics = compute_auc(all_labels, all_preds)
         
         return epoch_loss, metrics
 
@@ -127,11 +123,8 @@ class Trainer:
         # Compute validation loss
         val_loss = self.criterion(val_logits, val_labels).item()
         
-        # Find optimal thresholds for each class based on F1 score
-        self.metric_calculator.find_best_thresholds(val_labels.cpu().numpy(), val_preds)
-        
         # Compute validation metrics
-        val_metrics = self.metric_calculator.compute_all_metrics(val_labels.cpu().numpy(), val_preds)
+        val_metrics = compute_auc(val_labels.cpu().numpy(), val_preds)
         
         return val_loss, val_metrics
 
@@ -147,17 +140,11 @@ class Trainer:
             # Update training history with metrics from both phases
             for phase, loss, metrics in zip(['train', 'val'], [train_loss, val_loss], [train_metrics, val_metrics]):
                 self.history[phase]['loss'].append(loss)
-                self.history[phase]['auc'].append(metrics['auc'][0])
-                self.history[phase]['f1'].append(metrics['f1'][0])
-                self.history[phase]['precision'].append(metrics['precision'][0])
-                self.history[phase]['recall'].append(metrics['recall'][0])
+                self.history[phase]['auc'].append(metrics[0])
 
             # Print epoch summary
             print(f"Epoch {epoch+1}/{self.num_epochs}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
-            
-            # Print detailed metrics for both training and validation
-            self.metric_calculator.print_detailed_metrics(train_metrics, phase="Train")
-            self.metric_calculator.print_detailed_metrics(val_metrics, phase="Validation")
+
 
         # Find and report best validation AUC
         best_val_auc = max(self.history['val']['auc'])
@@ -165,5 +152,5 @@ class Trainer:
 
         # Generate visualizations and save results
         plot_learning_curves(self.model_name, self.history, self.num_epochs)
-        bar_aucs(val_metrics['auc'][1], self.label_columns)
+        bar_aucs(val_metrics[1], self.label_columns)
         save_results_csv(self.model_name, self.history, self.num_epochs, self.lr)

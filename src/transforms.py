@@ -11,7 +11,7 @@ def get_train_transform() -> A.Compose:
         A.LongestMaxSize(max_size=512),
         
         # Pad to square if needed (black padding)
-        A.PadIfNeeded(min_height=512, min_width=512, border_mode=0, value=0),
+        A.PadIfNeeded(min_height=512, min_width=512, border_mode=0),
         
         # Geometric augmentations
         A.HorizontalFlip(p=0.5),  # 50% chance of horizontal flip
@@ -20,7 +20,6 @@ def get_train_transform() -> A.Compose:
             scale_limit=0.05,      # Small scaling (5% change)
             rotate_limit=5,        # Small rotations (5 degrees)
             border_mode=0,         # Black border for out-of-bounds
-            value=0,               # Black fill value
             p=0.3                  # 30% probability
         ),
         
@@ -49,7 +48,7 @@ def get_val_transform() -> A.Compose:
         A.LongestMaxSize(max_size=512),
         
         # Pad to square if needed (black padding)
-        A.PadIfNeeded(min_height=512, min_width=512, border_mode=0, value=0),
+        A.PadIfNeeded(min_height=512, min_width=512, border_mode=0),
         
         # Normalize to [-1, 1] range (same as training)
         A.Normalize(mean=(0.5,), std=(0.5,)),

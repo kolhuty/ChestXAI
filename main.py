@@ -15,9 +15,12 @@ from src.model import CNNClassifier
 from utils.helper import compute_pos_weight
 from src.train import Trainer
 
+import warnings
+warnings.filterwarnings("ignore")
+
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def main() -> None:
+def main():
     """Main training pipeline for chest X-ray classification."""
     # Load configuration parameters
     cfg = load_config()
@@ -79,7 +82,7 @@ def main() -> None:
     # Optimizer with different learning rates for different components
     optimizer = torch.optim.Adam([
         {'params': first_layer_params, 'lr': 1e-3},      # Higher LR for new grayscale layer
-        {'params': other_backbone_params, 'lr': cfg['lr']},  # Lower LR for pre-trained layers
+        {'params': other_backbone_params, 'lr':  float(cfg['lr'])},  # Lower LR for pre-trained layers
         {'params': fc_params, 'lr': 1e-3}                # Higher LR for custom classifier
     ])
 
