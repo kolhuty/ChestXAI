@@ -15,35 +15,46 @@ from src.model import CNNClassifier
 from utils.helper import compute_pos_weight
 from src.train import Trainer
 
+import os
 import warnings
 warnings.filterwarnings("ignore")
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def main():
+def main(is_test=False) -> None:
     """Main training pipeline for chest X-ray classification."""
     # Load configuration parameters
-    cfg = load_config()
+    if is_test:
+        cfg = load_config(config_path="config/test_config.yml")
+    else:
+        cfg = load_config()
 
     print(f"Using device: {DEVICE}")
 
     # Load and split training data
-    train_data, val_data = load_train_data(cfg['csv_dir_train'], cfg['label_columns'], cfg['subset_frac'])
+    current_dir = os.path.dirname(__file__)
+    dir_train = os.path.join(current_dir, cfg['image_dir_train'])
+    csv_train = os.path.join(current_dir, cfg['image_dir_train'], cfg['csv_dir_train'])
+
+    train_data, val_data, test_data = load_train_data(csv_train, cfg['label_columns'], cfg['subset_frac'])
     
     # Get data augmentation transforms
-    train_transform = get_train_transform()  # Includes augmentations
-    val_transform = get_val_transform()      # No augmentations, only normalization
+    train_transform = get_train_transform(cfg['img_size'])  # Includes augmentations
+    val_transform = get_val_transform(cfg['img_size'])      # No augmentations, only normalization
 
     # Create datasets
-    train_dataset = ChestXRayDataset(train_data, cfg['image_dir_train'], img_size=cfg['img_size'],
-                                     is_test=False, label_cols=cfg['label_columns'], transform=train_transform)
+    train_dataset = ChestXRayDataset(train_data, dir_train, img_size=cfg['img_size'],
+                                      label_cols=cfg['label_columns'], transform=train_transform)
 
-    val_dataset = ChestXRayDataset(val_data, cfg['image_dir_train'], img_size=cfg['img_size'],
-                                   is_test=False, label_cols=cfg['label_columns'], transform=val_transform)
+    val_dataset = ChestXRayDataset(val_data, dir_train, img_size=cfg['img_size'],
+                                      label_cols=cfg['label_columns'], transform=val_transform)
+    test_dataset = ChestXRayDataset(test_data, dir_train, img_size=cfg['img_size'],
+                                   label_cols=cfg['label_columns'], transform=val_transform)
 
     # Create data loaders with appropriate settings
     train_loader = DataLoader(train_dataset, batch_size=cfg['batch_size'], shuffle=True, num_workers=3, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=cfg['batch_size'], shuffle=False, num_workers=3, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=cfg['batch_size'], shuffle=False, num_workers=3, pin_memory=True)
 
     # Initialize pre-trained backbone model
     if hasattr(models, cfg['model_name']):
@@ -91,7 +102,7 @@ def main():
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
     # Initialize trainer and start training
-    trainer = Trainer(model, optimizer, criterion, train_loader, val_loader, device=DEVICE, config=cfg)
+    trainer = Trainer(model, optimizer, criterion, train_loader, val_loader, test_loader, device=DEVICE, config=cfg)
     trainer.fit()
 
 if __name__ == "__main__":

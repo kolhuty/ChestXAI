@@ -1,0 +1,16 @@
+model_name: efficientnet_v2_m
+img_size: [20, 20]
+batch_size: 2
+num_classes: 14
+num_epochs: 2
+lr: 5e-3
+subset_frac: 0.5
+
+label_columns: [
+    'Atelectasis', 'Cardiomegaly', 'Consolidation', 'Edema', 'Enlarged Cardiomediastinum',
+    'Fracture', 'Lung Lesion', 'Lung Opacity', 'No Finding', 'Pleural Effusion',
+    'Pleural Other', 'Pneumonia', 'Pneumothorax', 'Support Devices'
+]
+
+csv_dir_train: train2.csv
+image_dir_train: train2_subset

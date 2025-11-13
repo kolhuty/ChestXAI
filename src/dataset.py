@@ -5,7 +5,6 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
-from PIL import Image
 import cv2
 import os
 
@@ -13,14 +12,11 @@ import os
 class ChestXRayDataset(Dataset):
     """PyTorch Dataset for chest X-ray images and disease labels."""
     
-    def __init__(self, df: pd.DataFrame, image_dir: str, img_size: tuple[int, int],
-                 is_test: bool = False, label_cols: list[str] | None = None, 
-                 transform=None) -> None:
-        """Initialize the dataset."""
+    def __init__(self, df: pd.DataFrame, image_dir: str | bytes, img_size: tuple[int, int],
+                label_cols: list[str] | None = None, transform=None) -> None:
         self.df = df.reset_index(drop=True)
         self.image_dir = image_dir
         self.img_size = img_size
-        self.is_test = is_test
         self.label_cols = label_cols
         self.transform = transform
 
@@ -32,7 +28,7 @@ class ChestXRayDataset(Dataset):
         """Return the number of samples in the dataset."""
         return len(self.df)
 
-    def __getitem__(self, idx: int) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         """Get a sample from the dataset."""
         # Get the row data for this index
         row = self.df.iloc[idx]
@@ -60,10 +56,6 @@ class ChestXRayDataset(Dataset):
             # Fallback: convert to tensor using torchvision transforms
             img = transforms.ToTensor()(img)
 
-        # Return only image for test datasets, image and labels for training
-        if self.is_test:
-            return img
-        else:
-            # Convert labels to float32 tensor
-            labels = torch.tensor(row[self.label_cols].values.astype(np.float32))
-            return img, labels
+        # Convert labels to float32 tensor
+        labels = torch.tensor(row[self.label_cols].values.astype(np.float32))
+        return img, labels

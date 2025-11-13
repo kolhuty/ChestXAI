@@ -7,7 +7,6 @@ class CNNClassifier(nn.Module):
     """CNN classifier for chest X-ray disease classification."""
     
     def __init__(self, backbone: nn.Module, feature_dim: int, num_classes: int) -> None:
-        """Initialize the CNN classifier."""
         super().__init__()
         self.backbone = backbone
         self.fc = nn.Sequential(

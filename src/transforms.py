@@ -4,14 +4,14 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 
-def get_train_transform() -> A.Compose:
+def get_train_transform(img_size: list[int, int]) -> A.Compose:
     """Get data augmentation pipeline for training data."""
     return A.Compose([
         # Resize image while maintaining aspect ratio
-        A.LongestMaxSize(max_size=512),
+        A.LongestMaxSize(max_size=img_size[0]),
         
         # Pad to square if needed (black padding)
-        A.PadIfNeeded(min_height=512, min_width=512, border_mode=0),
+        A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1], border_mode=0),
         
         # Geometric augmentations
         A.HorizontalFlip(p=0.5),  # 50% chance of horizontal flip
@@ -41,14 +41,14 @@ def get_train_transform() -> A.Compose:
     ])
 
 
-def get_val_transform() -> A.Compose:
+def get_val_transform(img_size: list[int, int]) -> A.Compose:
     """Get preprocessing pipeline for validation/test data."""
     return A.Compose([
         # Resize image while maintaining aspect ratio
-        A.LongestMaxSize(max_size=512),
+        A.LongestMaxSize(max_size=img_size[0]),
         
         # Pad to square if needed (black padding)
-        A.PadIfNeeded(min_height=512, min_width=512, border_mode=0),
+        A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1], border_mode=0),
         
         # Normalize to [-1, 1] range (same as training)
         A.Normalize(mean=(0.5,), std=(0.5,)),

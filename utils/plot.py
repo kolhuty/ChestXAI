@@ -1,5 +1,6 @@
 """Visualization utilities for training results and model evaluation."""
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 def plot_learning_curves(model_name: str, history: dict, num_epochs: int) -> None:
     """Plot learning curves for loss and AUC."""
     epochs = np.arange(1, num_epochs+1)
+    os.makedirs("plots", exist_ok=True)
 
     plt.figure(figsize=(10,4))
     
@@ -31,11 +33,17 @@ def plot_learning_curves(model_name: str, history: dict, num_epochs: int) -> Non
     plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plt.show()
+
+    save_path = os.path.join("plots", f"{model_name}_learning_curves_{num_epochs}_epochs.png")
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Saved learning curves to: {save_path}")
 
 
 def bar_aucs(aucs_per_classes: np.ndarray, label_columns: list[str]) -> None:
     """Create a bar chart showing AUC scores for each disease class."""
+    os.makedirs("plots", exist_ok=True)
+
     plt.figure(figsize=(30,4))
     
     # Create bar chart
@@ -58,4 +66,8 @@ def bar_aucs(aucs_per_classes: np.ndarray, label_columns: list[str]) -> None:
     plt.grid(True, alpha=0.3, axis='y')
     
     plt.tight_layout()
-    plt.show()
+
+    save_path = os.path.join("plots", f"aucs_per_class.png")
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Saved per-class AUC bar chart to: {save_path}")

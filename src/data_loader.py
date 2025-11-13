@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-def load_train_data(path: str, label_columns: list[str], subset_frac: float) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_train_data(path: str | bytes, label_columns: list[str], subset_frac: float) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Load and split training data into train/validation sets."""
     # Load the training data CSV file
     try:
@@ -23,10 +23,10 @@ def load_train_data(path: str, label_columns: list[str], subset_frac: float) -> 
     # This is useful for faster experimentation and development
     df_small = train_df.sample(frac=subset_frac, random_state=42)
 
-    # Split into train and validation sets (80/20 split)
-    # Using random_state=42 ensures reproducible splits across runs
-    train_data, val_data = train_test_split(df_small, test_size=0.2, random_state=42)
+    # Split into train, validation, test sets (85/10/5 split)
+    train_data, val_test_data = train_test_split(df_small, test_size=0.15, random_state=42)
+    val_data, test_data = train_test_split(val_test_data, test_size=0.33, random_state=42)
 
-    print(f"Train samples: {len(train_data)}, Validation samples: {len(val_data)}")
+    print(f"Train samples: {len(train_data)}, Validation samples: {len(val_data)}, Test samples: {len(test_data)}")
 
-    return train_data, val_data
+    return train_data, val_data, test_data

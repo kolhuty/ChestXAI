@@ -13,14 +13,15 @@ class Trainer:
     
     def __init__(self, model: torch.nn.Module, optimizer: torch.optim.Optimizer, 
                  criterion: torch.nn.Module, train_loader: torch.utils.data.DataLoader, 
-                 val_loader: torch.utils.data.DataLoader, device: torch.device, config: dict) -> None:
-        """Initialize the Trainer."""
+                 val_loader: torch.utils.data.DataLoader, test_loader: torch.utils.data.DataLoader,
+                 device: torch.device, config: dict) -> None:
         # Move model to specified device
         self.model = model.to(device)
         self.optimizer = optimizer
         self.criterion = criterion
         self.train_loader = train_loader
         self.val_loader = val_loader
+        self.test_loader = test_loader
         self.device = device
 
         # Extract training parameters from config
@@ -98,7 +99,8 @@ class Trainer:
         """Validate the model for one complete epoch."""
         # Set model to evaluation mode
         self.model.eval()
-        val_logits_all, val_probs_all, val_labels_all = [], [], []
+        running_loss = 0.0
+        val_probs_all, val_labels_all = [], []
 
         # Run validation without gradient computation
         with torch.no_grad():
@@ -110,23 +112,46 @@ class Trainer:
                 logits = self.model(imgs)
                 probs = torch.sigmoid(logits)
 
+                loss = self.criterion(logits, labels)
+                running_loss += loss.item() * imgs.size(0)
+
                 # Store logits, probabilities, and labels
-                val_logits_all.append(logits.detach())
                 val_probs_all.append(probs.detach().cpu().numpy())
                 val_labels_all.append(labels.detach())
 
+        # Compute validation loss
+        epoch_loss = running_loss / len(self.val_loader.dataset)
+
         # Concatenate all validation results
-        val_logits = torch.cat(val_logits_all).to(self.device)
         val_labels = torch.cat(val_labels_all).to(self.device)
         val_preds = np.vstack(val_probs_all)
-
-        # Compute validation loss
-        val_loss = self.criterion(val_logits, val_labels).item()
         
         # Compute validation metrics
         val_metrics = compute_auc(val_labels.cpu().numpy(), val_preds)
         
-        return val_loss, val_metrics
+        return epoch_loss, val_metrics
+
+    def infer(self):
+        
+        self.model.eval()
+        test_preds, test_labels = [], []
+
+        with torch.no_grad():
+            for imgs, labels in tqdm(self.test_loader, desc="Test"):
+                imgs = imgs.to(self.device, dtype=torch.float)
+                labels = labels.to(self.device, dtype=torch.float)
+
+                logits = self.model(imgs)
+                probs = torch.sigmoid(logits).detach().cpu().numpy()
+                test_preds.append(probs)
+                test_labels.append(labels.cpu().numpy())
+
+        test_preds = np.vstack(test_preds)
+        test_labels = np.vstack(test_labels)
+
+        test_metrics = compute_auc(test_labels, test_preds)
+
+        return test_metrics
 
     def fit(self) -> None:
         """Run the complete training process."""
@@ -146,9 +171,12 @@ class Trainer:
             print(f"Epoch {epoch+1}/{self.num_epochs}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
 
 
-        # Find and report best validation AUC
+        # Report AUC
         best_val_auc = max(self.history['val']['auc'])
         print(f"The best validation AUC: {best_val_auc}")
+        test_auc = self.infer()
+        print(f"Test AUC: {test_auc[0]}")
+        print(f"Test AUC per classes: {test_auc[1]}")
 
         # Generate visualizations and save results
         plot_learning_curves(self.model_name, self.history, self.num_epochs)
