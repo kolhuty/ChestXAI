@@ -36,7 +36,7 @@ def generate_noise_data(num_images=100, image_size = (20, 20)):
 
 def test_model():
 
-    #generate_noise_data()
+    generate_noise_data()
 
     try:
         main(is_test=True)
